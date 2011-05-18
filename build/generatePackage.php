@@ -21,14 +21,15 @@ $packageFileManager = new PEAR_PackageFileManager2();
 
 // Set channel and stability from options
 // Default to pear.simplepie.org (NB this does not exist), snapshot,
-// and base version 1.2.0.
+// and base version 1.2.1.
 
 $channel   = NULL;
 $stability = NULL;
 $version   = NULL;
+$releaseVersion = NULL;
 
-$shortOptions = array('c:', 's:', 'v:');
-$longOptions  = array('channel:', 'stability:', 'version:');
+$shortOptions = array('c:', 's:', 'v:', 'r:');
+$longOptions  = array('channel:', 'stability:', 'version:', 'release-version:');
 
 foreach(getopt(join($shortOptions), $longOptions) as $option => $value)
 {
@@ -45,6 +46,10 @@ foreach(getopt(join($shortOptions), $longOptions) as $option => $value)
         case 's':
         case 'stability':
             $stability = $value;
+            break;
+        case 'r':
+        case 'releaseVersion':
+            $releaseVersion = $value;
             break;
     }
 }
@@ -63,7 +68,7 @@ if (NULL === $stability)
 
 if (NULL === $version)
 {
-    $version = '1.2.0';
+    $version = '1.2.1';
     fwrite(STDERR, "Defaulting to version $version (specify --version to override)." . PHP_EOL);
 }
 
@@ -71,17 +76,21 @@ if (NULL === $version)
 $apiStability = ($stability === 'snapshot') ? 'devel' : $stability;
 
 // Calculate release version
-if ('stable' !== $stability)
+if (NULL === $releaseVersion)
 {
-    $releaseVersion = "$version$stability";
+    if ('stable' !== $stability)
+    {
+        $releaseVersion = "$version$stability";
+    }
+
+    if ('snapshot' === $stability)
+    {
+        $releaseVersion .= date('YmdHis');
+    }
+
+    fwrite(STDERR, "Defaulting to release version $releaseVersion (specify --release-version to override)." . PHP_EOL);
 }
 
-if ('snapshot' === $stability)
-{
-    $releaseVersion .= date('YmdHis');
-}
-
-fwrite(STDERR, "Calculated release version as $releaseVersion" . PHP_EOL);
 
 $packageFileManager->setOptions(array(
     'baseinstalldir'    => '/',
